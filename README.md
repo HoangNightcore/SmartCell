@@ -1,4 +1,4 @@
-# 📱 Mobile Store – Fullstack E-commerce Website
+# 📱 Smart Cell – Fullstack E-commerce Website
 Một ứng dụng E-commerce bán điện thoại di động được xây dựng với Next.js 14 và NestJS, áp dụng kiến trúc hiện đại, CI/CD, Docker và triển khai theo mô hình Agile/Scrum.
 
 ## 🚀 Tech Stack
@@ -70,7 +70,7 @@ Một ứng dụng E-commerce bán điện thoại di động được xây dự
 
 ## 📂 Project Structure (Monorepo với Turborepo)
 ```bash
-smartcell-ecommerce/
+smartcell/
 ├── 📄 README.md
 ├── 📄 package.json                 # Root workspace config
 ├── 📄 yarn.lock
@@ -492,7 +492,7 @@ smartcell-ecommerce/
 ```bash
 # Clone repo
 git clone https://github.com/HoangNightcore/SmartCell.git
-cd mobile-store
+cd smart-cell
 
 # Cài đặt các dependencies
 pnpm install
@@ -570,4 +570,4 @@ pnpm test
 ## 👨‍💻 Author
 - Nguyễn Minh Hoàng – Fullstack Developer
 - Chuyên môn: Phát triển Web, DevOps, Thiết kế Cơ sở dữ liệu
-- 🌐 [Thay đổi đường dẫn liên kết LinkedIn/GitHub của bạn tại đây]
+- 🌐 [Linkedin: https://www.linkedin.com/in/ho%C3%A0ng-nguy%E1%BB%85n-9052b6326/]
