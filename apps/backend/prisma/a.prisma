@@ -1,0 +1,234 @@
+// // Chỉ định prisma sử dụng công cụ nào để làm việc với JS/TypeScript
+// generator client{
+//     provider="prisma-client-js"
+// }
+
+// // Khai báo địa chỉ của DB
+// datasource db{
+//     provider="postgresql"
+// }
+
+// //----------------------------- ENUM ----------------------
+// enum UserRole{
+//     CUSTOMER
+//     ADMIN
+//     STAFF
+// }
+
+// enum OrderStatus{
+//     PENDING     // Chờ thanh toán
+//     PAID        // Đã thanh toán, chờ xử lý
+//     PROCESSING  // Đang đóng gói
+//     SHIPPED     // Đã giao vận chuyển
+//     DELIVERED   // Đã giao hàng
+//     CANCELLED   // Đã hủy
+//     REFUNDED    // Đã hoàn tiền
+// }
+
+// enum BenefitType{
+//     DISCOUNT_PERCENT
+//     FREE_SHIPPING
+//     BONUS_POINT_MULTIPLIER
+//     VOUCHER_CODE
+// }
+
+// // ------------------------- Identity & Auth --------------------
+
+// model User{
+//     id String @id @default(uuid())
+//     email String @unique
+//     passwordHash String @map("password_hash")
+//     role UserRole @default(CUSTOMER)
+//     isActive Boolean @default(true) @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+//     deletedAt DateTime? @map("deleted_at")
+
+//     // Relations
+//     profile CustomerProfile?
+//     addresses Address[]
+//     orders Order[]
+//     rank CustomerRank[]
+
+//     @@map("users")
+//     @@index([email])
+//     @@index([role,isActive])
+// }
+
+// model CustomerProfile{
+//     id String @id @default(uuid())
+//     userId String @unique @map("user_id")
+//     fullName String @map("full_name")
+//     phone String @unique
+//     gender String?
+//     dateOfBirth DateTime? @map("date_of_birth")
+//     avatarUrl String? @map("avatar_url")
+
+//     user User @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+//     @@map("customer_profiles")
+// }
+
+// model Address{
+//     id String @id @default(uuid())
+//     userId String @map("user_id")
+//     label String // "Nhà", "Văn phòng"
+//     fullName String @map("full_name")
+//     phone String
+//     street String
+//     ward String?
+//     district String
+//     city String
+//     isDefault Boolean @default(false) @map("is_default")
+
+//     user User @relation (fields: [userId], references: [id], onDelete:Cascade)
+//     orders Order[]
+
+//     @@map("addresses")
+//     @@index([userId])
+// }
+
+// // -------------------- Loyalty & Ranking ----------------------
+// model CustomerTier{
+//     id String @id @default(uuid())
+//     name String @unique     // "Bronze" | "Silver" | "Gold" | "Platinum"
+//     minSpending Int @map("min_spending")     // VND, tính theo rolling 12 tháng
+//     discountPercent Int @map("discount_percent")
+//     freeShipping Boolean @default(false) @map("free_shipping")
+//     prioritySupport Boolean @default(false) @map("priority_support")
+//     sortOrder Int @map("sort_order")        // Để sắp xếp hiển thị
+
+//     benefit CustomerTierBenefit[]
+//     ranks CustomerRank[]
+//     orders Order[]
+
+//     @@map("customer_tiers")
+//     @@index([minSpending])
+// }
+
+// model CustomerTierBenefit{
+//     id String @id @default(uuid())
+//     tierId String @map("tier_id")
+//     type BenefitType
+//     value String    // JSON string - linh hoạt theo type
+//     label String    // Hiển thị cho user: "Giảm 10% tất cả đơn hàng"
+//     validFrom DateTime @map("valid_from")
+//     validTo DateTime @map("valid_to")    // null = vĩnh viễn
+
+//     tier CustomerTier @relation(fields:[tierId],references:[id])
+
+//     @@map("customer_tier_benefits")
+//     @@index([tierId,validFrom])
+// }
+
+// model CustomerRank{
+//     id String @id @default(uuid())
+//     userId String @map("user_id")
+//     tierId String @map("tier_id")
+//     totalSpending Decimal @map("total_spending") @db.Decimal(15,2)
+//     periodSpending Decimal @map("period_spending") @db.Decimal(15,2)
+//     evaluatedAt DateTime @default(now()) @map("evaluated_at")
+//     validUntil DateTime @map("valid_until")
+//     triggerOrderId String? @map("trigger_order_id") // order nào gây ra việc tính lại
+
+//     user User @relation(fields:[userId],references:[id])
+//     tier CustomerTier @relation(fields:[tierId],references:[id])
+
+//     @@map("customer_ranks")
+//     @@index([userId,evaluatedAt(sort:Desc)]) // query rank mới nhất nhanh
+// }
+
+// // ------------ Catalog --------------------------------------
+// model Category{
+//     id String @id @default(uuid())
+//     name String @unique
+//     slug String @unique
+//     parentId String @map("parent_id")
+
+//     parent Category? @relation("CategoryTree",fields:[parentId], references:[id])
+//     child Category[] @relation("CategoryTree")
+//     products Product[]
+
+//     @@map("categories")
+// }
+
+// model Product{
+//     id String @id @default(uuid())
+//     sku String @unique
+//     name String 
+//     slug String @unique
+//     description String?
+//     price Decimal @db.Decimal(15,2)
+//     stockQty Int @default(0) @map("stock_qty")
+//     categoryId String @map("category_id")
+//     isActive Boolean @default(true) @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     category Category @relation(fields:[categoryId],references:[id])
+//     images ProductImage[]
+//     orderItems OrderItem[]
+
+//     @@map("products")
+//     @@index([slug])
+//     @@index([categoryId,isActive])
+//     @@index([isActive, stockQty]) // query sản phẩm còn hàng
+// }
+
+// model ProductImage{
+//     id String @id @default(uuid())
+//     productId String @map("product_id")
+//     url String // Cloudinary URL
+//     altText String? @map("alt_text")
+//     sortOrder Int @default(0) @map("sort_order")
+
+//     product Product @relation(fields:[productId],references:[id])
+
+//     @@map("product_images")
+//     @@index([productId, sortOrder])
+// }
+
+// // ------------------ Orders ---------------------------------
+// model Order{
+//     id String @id @default(uuid())
+//     userId String @map("user_id")
+//     addressId String @map("address_id")
+//     status OrderStatus @default(PENDING)
+//     subtotal Decimal @db.Decimal(15,2)
+//     discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(15,2)
+//     finalAmount Decimal @map("final_amount") @db.Decimal(15,2)
+//     appliedTierId String? @map("applied_tier_id") // Tier khi đặt hàng
+//     stripePaymentId String? @map("stripe_payment_id") @unique
+//     note String?
+//     orderedAt DateTime @default(now()) @map("ordered_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     // Snapshot địa chỉ - lưu lại phòng user thay đổi address sau
+//     sanpshotAddress Json @map("snapshot_address")
+
+//     user User @relation(fields:[userId],references:[id])
+//     address Address @relation(fields:[addressId],references:[id])
+//     appliedTier CustomerTier? @relation(fields:[appliedTierId],references:[id])
+//     items OrderItem[]
+
+//     @@map("orders")
+//     @@index([userId, orderedAt(sort:Desc)])
+//     @@index([status])
+//     @@index([stripePaymentId]) 
+// }
+
+// model OrderItem{
+//     id String @id @default(uuid())
+//     orderId String @map("order_id")
+//     productId String @map("product_id")
+//     quantity Int
+//     snapshotPrice Decimal @map("snapshot_price") @db.Decimal(15,2) // Giá lúc mua
+//     snapshotName String @map("snapshot_name") // Tên lúc mua
+//     snapshotSku String @map("snapshot_sku") // sku lúc mua
+
+//     order Order @relation(fields: [orderId],references: [id])
+//     product Product @relation(fields: [productId],references: [id])
+
+//     @@map("order_items")
+//     @@index([orderId])
+// }
