@@ -1,0 +1,730 @@
+// generator client {
+//     provider="prisma-client-js"
+// }
+
+// // Khai báo địa chỉ của DB
+// datasource db {
+//     provider="postgresql"
+// }
+
+// enum UserRole {
+//     CUSTOMER
+//     ADMIN
+//     STAFF
+// }
+
+// enum OrderStatus {
+//     PENDING     // Chờ thanh toán
+//     PAID        // Đã thanh toán, chờ xử lý
+//     PROCESSING  // Đang đóng gói
+//     SHIPPED     // Đã giao vận chuyển
+//     DELIVERED   // Đã giao hàng
+//     CANCELLED   // Đã hủy
+//     REFUNDED    // Đã hoàn tiền
+// }
+
+// enum BenefitType {
+//     DISCOUNT_PERCENT
+//     FREE_SHIPPING
+//     BONUS_POINT_MULTIPLIER
+//     VOUCHER_CODE
+// }
+
+// enum PaymentStatus {
+//   PENDING            // Chờ thanh toán
+//   PAID               // Đã thanh toán
+//   FAILED             // Thanh toán thất bại
+//   REFUNDED           // Đã hoàn tiền toàn phần
+//   PARTIALLY_REFUNDED // Hoàn tiền một phần
+// }
+
+// enum FulfillmentStatus {
+//   UNFULFILLED         // Chưa xử lý
+//   PARTIALLY_FULFILLED // Xử lý một phần
+//   FULFILLED           // Đã xử lý xong
+//   RETURNED            // Đã trả hàng
+// }
+
+// enum ReviewStatus {
+//   PENDING   // Chờ duyệt
+//   APPROVED  // Đã duyệt
+//   REJECTED  // Bị từ chối
+//   HIDDEN    // Đã ẩn
+//   FLAGGED   // Bị báo cáo vi phạm
+// }
+
+// enum CouponType {
+//   PERCENTAGE   // Giảm theo %
+//   FIXED_AMOUNT // Giảm số tiền cố định
+//   FREE_SHIPPING // Miễn phí vận chuyển
+// }
+
+// enum DiscountType {
+//   PERCENTAGE   // Giảm theo %
+//   FIXED_AMOUNT // Giảm số tiền cố định
+// }
+
+// enum ScopeType {
+//   ALL      // Toàn bộ sản phẩm
+//   CATEGORY // Danh mục
+//   BRAND    // Thương hiệu
+//   SERIES   // Dòng sản phẩm
+// }
+
+// enum PointTransactionType {
+//   PURCHASE_EARNED // Tích điểm từ mua hàng
+//   REDEMPTION      // Tiêu điểm đổi ưu đãi
+//   EXPIRY          // Điểm hết hạn bị trừ
+//   BONUS           // Điểm thưởng (sự kiện, admin)
+//   MANUAL_ADJUST   // Điều chỉnh thủ công
+//   REFUND_DEDUCTED // Trừ điểm khi hoàn đơn
+// }
+
+// enum CustomerRankStatus {
+//   ACTIVE        // Đang giữ hạng
+//   GRACE_PERIOD  // Giai đoạn chờ (ví dụ: đủ chi tiêu nhưng đơn chưa hoàn tất)
+//   EXPIRED       // Đã hết hạn
+//   PENDING_DOWNGRADE // Cảnh báo sắp xuống hạng
+// }
+
+// enum PaymentMethod {
+//   COD
+//   MOMO
+//   VNPAY
+//   STRIPE
+// }
+
+// // Enum mới — cần thêm cho CustomerRankHistory
+// enum TierChangeType {
+//   INITIAL   // Lần đầu được gán tier
+//   UPGRADE   // Lên hạng
+//   DOWNGRADE // Xuống hạng
+//   MANUAL    // Admin thay đổi thủ công
+// }
+
+// // ------------------------- Identity & Auth --------------------
+
+// model User{
+//     id String @id @default(uuid())
+//     email String @unique
+//     passwordHash String @map("password_hash")
+//     role UserRole @default(CUSTOMER)
+//     isActive Boolean @default(true) @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+//     deletedAt DateTime? @map("deleted_at")
+
+//     // Relations
+//     profile CustomerProfile?
+
+//     @@map("users")
+//     @@index([email])
+//     @@index([role,isActive])
+// }
+
+// model CustomerProfile{
+//     id String @id @default(uuid())
+//     userId String @unique @map("user_id")
+//     fullName String @map("full_name")
+//     phone String @unique
+//     gender String?
+//     dateOfBirth DateTime? @map("date_of_birth")
+//     avatarUrl String? @map("avatar_url")
+//     tierPoint Int @default(0) @map("tier_point")
+//     totalSpent Decimal @db.Decimal(15,2) @map("total_spent")
+//     totalOrders Int @default(0) @map("total_orders")
+//     lastOrderedAt DateTime? @map("last_ordered_at")
+//     averageOrderValue Decimal @db.Decimal(15,2) @map("average_order_value")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+
+//     user User @relation(fields:[userId], references:[id], onDelete: Cascade)
+
+//     addresses Address[]
+//     carts Cart[]
+//     orders Order[]
+//     rank CustomerRank[]
+
+//     @@map("customer_profiles")
+// }
+
+// model Address{
+//     id String @id @default(uuid())
+//     customerId String @map("customer_id")
+//     label String // "Nhà", "Văn phòng"
+//     fullName String @map("full_name")
+//     phone String
+//     addressLine String @map("address_line")
+//     street String
+//     ward String?
+//     district String
+//     city String
+//     isDefault Boolean @default(false) @map("is_default")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     customer CustomerProfile @relation (fields: [customerId], references: [id], onDelete:Cascade)
+//     orders Order[]
+
+//     @@map("addresses")
+//     @@index([customerId])
+// }
+
+// // ------------ Catalog --------------------------------------
+
+// model Brand{ // Apple, Samsung, Huawei,..
+//     id String @id @default(uuid())
+//     categoryId String @map("category_id")
+//     name String @unique
+//     slug String @unique
+//     description String 
+//     logoUrl String @map("logo_url")
+//     websiteUrl String? @map("website_url")
+//     isActive Boolean @default(true) @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     category Category @relation(fields: [categoryId],references: [id])
+
+//     brandSeries BrandSeries[]
+//     products Product[]
+
+//     @@map("brands")
+// }
+
+// model BrandSeries{
+//     id String @id @default(uuid())
+//     name String @unique
+//     slug String @unique
+//     brandId String @map("brand_id")
+//     description String
+//     launchYear Int @map("launchYear")
+//     isFlagship Boolean @default(false) @map("is_flagship")
+//     isActive Boolean @default(true) @map("is_active")
+//     seoTitle String @map("seo_title")
+//     seoDescription String @map("seo_description")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     brand Brand @relation(fields: [brandId],references: [id])
+//     products Product[]
+//     @@map("brand_series")
+// }
+
+// model Category{
+//     id String @id @default(uuid())
+//     name String @unique
+//     slug String @unique
+//     seoTitle String @map("seo_title")
+//     seoDescription String @map("seo_description")
+//     description String?
+//     iconUrl String @map("icon_url")
+//     imgUrl String @map("img_url")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+//     parentId String @map("parent_id")
+
+//     parent Category? @relation("CategoryTree",fields:[parentId], references:[id])
+//     child Category[] @relation("CategoryTree")
+//     products Product[]
+//     brands Brand[]
+
+//     @@map("categories")
+// }
+
+// model Product{
+//     id String @id @default(uuid())
+
+//     // Khóa ngoại
+//     brandId String? @map("brand_id")
+//     brandSeriesId String? @map("brand_series_id")
+//     categoryId String @map("category_id")
+
+//     name String 
+//     slug String @unique
+//     specifications Json? @db.JsonB
+
+//     description String?
+//     shortDescription String? @map("short_description")
+//     metaTitle String @map("meta_title")
+//     metaDescription String @map("meta_description")
+
+//     // Giá
+//     minPrice Decimal @db.Decimal(15,2) @map("min_price") // = giá khởi điểm thấp nhất trong các variant (dùng trigger update tự động)
+//     maxPrice Decimal @db.Decimal(15,2) @map("max_price")
+
+//     // Thuộc tính boolean
+//     isActive Boolean @default(true) @map("is_active")
+//     isFeatured Boolean @default(false) @map("is_featured")
+//     isDigital Boolean @default(false) @map("is_digital")
+//     isNew Boolean @default(true) @map("is_new")
+
+//     // Thống kê
+//     viewCount Int @default(0) @map("view_count")
+//     ratingCount Int @default(0) @map("rating_count")
+//     ratingAvg Decimal @db.Decimal(15,2) @map("rating_avg")
+
+//     // Timestamp
+//     publishedAt DateTime? @map("published_at")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+//     deletedAt DateTime? @map("deleted_at")
+
+//     // Relation
+//     category Category @relation(fields:[categoryId],references:[id])
+//     brand Brand? @relation(fields: [brandId],references: [id])
+//     brandSeries BrandSeries? @relation(fields: [brandSeriesId],references: [id])
+//     productVariants ProductVariant[]
+//     orderItems OrderItem[]
+//     carts Cart[]
+//     hotProduct HotProduct?
+//     reviews Review[]
+//     discounts Discount[]
+
+//     @@map("products")
+//     @@index([slug])
+//     @@index([categoryId,isActive])
+//     @@index([brandId,isActive])
+//     @@index([brandSeriesId,isActive])
+//     // @@index([isActive, stockQty]) // query sản phẩm còn hàng
+// }
+
+// model ProductVariant{
+//     id String @id @default(uuid())
+//     productId String @map("product_id")
+//     name String 
+//     sku String @unique
+//     barcode String @unique
+
+//     price Decimal @db.Decimal(15,2)
+
+//     variantAttributes Json @db.JsonB @map("variant_attributes")
+//     isDefault Boolean @default(false) @map("is_default")
+//     isActive Boolean @default(true) @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+    
+//     product Product @relation(fields: [productId],references: [id])
+//     images VariantImage[]
+//     orderItems OrderItem[]
+//     carts Cart[]
+//     discounts Discount[]
+//     inventories Inventory[]
+//     reviews Review[]
+
+//     @@map("product_variants")
+//     @@index([barcode,isActive])
+//     @@index([sku])
+// }
+
+// model VariantImage{
+//     id String @id @default(uuid())
+//     productVariantId String @map("product_variant_id")
+//     url String // Cloudinary URL
+//     altText String? @map("alt_text")
+//     sortOrder Int @default(0) @map("sort_order")
+
+//     productVariant ProductVariant @relation(fields:[productVariantId],references:[id])
+
+//     @@map("variant_images")
+//     @@index([productVariantId, sortOrder])
+// }
+
+// model Cart{
+//     id String @id @default(uuid())
+
+//     // Khóa ngoại
+//     productId String @map("product_id")
+//     productVariantId String @map("product_variant_id")
+//     customerId String? @map("customer_id")
+//     sessionId String @map("session_id")
+
+//     quantity Int
+//     unitPrice Decimal @db.Decimal(15,2) @map("unit_price")
+//     expiresAt DateTime @map("expires_at")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     // Relation
+//     product Product @relation(fields: [productId],references: [id])
+//     productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+//     customer CustomerProfile? @relation(fields: [customerId], references: [id])
+//     @@map("carts")
+//     @@unique([customerId, productVariantId])
+// }
+
+// model HotProduct{
+//     id String @id @default(uuid())
+//     productId String @unique @map("product_id")
+//     calculatedAt DateTime @map("calculated_at")
+//     totalSales Int @map("total_sales")
+//     totalRevenue Decimal @db.Decimal(15,2) @map("total_revenue")
+//     totalViews Int @map("total_views")
+//     totalReviews Int @map("total_reviews")
+//     avgRating Decimal @db.Decimal(15,2) @map("avg_rating")
+//     hotScore Decimal @db.Decimal(15,2) @map("hot_score")
+//     rank Int 
+//     isActive Boolean @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     product Product @relation(fields: [productId],references: [id],onDelete: Cascade)
+
+//     @@map("hot_products")
+// }
+
+// model Inventory{
+//     id String @id @default(uuid())
+//     productVariantId String @map("product_variant_id")
+//     warehouseLocation Json @db.JsonB @map("warehouse_location")
+//     quantityAvailable Int @map("quantity_available")
+//     quantityReserved Int @map("quantity_reserved")
+//     quantitySold Int @map("quantity_sold")
+//     lowStockThreshold Int @map("low_stock_threshold")
+//     reorderPoint Int @map("reorder_point")
+//     reorderQuantity Int @map("reorder_quantity")
+//     costPrice Decimal @db.Decimal(15,2) @map("cost_price")
+
+//     // Relation
+//     productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+
+//     @@map("inventories")
+// }
+
+// // ------------------ Orders ---------------------------------
+// model Order{
+//     id String @id @default(uuid())
+//     orderNumber String @unique @map("order_number") 
+//     trackingNumber String @unique @map("tracking_number")
+
+//     // Khóa ngoại
+//     customerId String @map("customer_id")
+//     addressId String @map("address_id")
+//     couponId String? @map("coupon_id")
+//     customerTierId String @map("customer_tier_id")
+
+//     // Status
+//     orderStatus OrderStatus @default(PENDING)
+//     paymentStatus PaymentStatus
+//     fulfillmentStatus FulfillmentStatus
+
+//     // Tính tiền
+//     subtotal Decimal @db.Decimal(15,2)
+//     taxAmount Decimal @db.Decimal(15,2) @map("tax_amount")
+//     shippingAmount Decimal @db.Decimal(15,2) @map("shipping_amount")
+//     discountAmount Decimal @default(0) @map("discount_amount") @db.Decimal(15,2)
+//     finalAmount Decimal @map("final_amount") @db.Decimal(15,2)
+    
+//     appliedTierName String? @map("applied_tier_name") // Tier khi đặt hàng
+//     customerNote String? @map("customer_note")
+//     adminNote String? @map("admin_note")
+
+//     // Timestamp
+//     orderedAt DateTime @default(now()) @map("ordered_at")
+//     deliveredAt DateTime @map("delivered_at")
+//     shippedAt DateTime @map("shipped_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     // Snapshot địa chỉ - lưu lại phòng user thay đổi address sau
+//     snapshotAddress Json @db.JsonB @map("snapshot_address")
+
+//     customer CustomerProfile @relation(fields:[customerId],references:[id])
+//     address Address @relation(fields:[addressId],references:[id])
+//     coupon Coupon? @relation(fields: [couponId],references: [id])
+//     customerTier CustomerTier @relation(fields: [customerTierId], references: [id])
+//     items OrderItem[]
+//     payments Payment[]
+//     tierBenefitApplications TierBenefitApplication[]
+
+//     @@map("orders")
+//     @@index([customerId, orderedAt(sort:Desc)])
+// }
+
+// model OrderItem{
+//     id String @id @default(uuid())
+
+//     // Khóa ngoại
+//     orderId String @map("order_id")
+//     productId String @map("product_id")
+//     productVariantId String @map("product_variant_id")
+
+//     // Snapshot
+//     productName String @map("product_name")
+//     variantName String @map("variant_name")
+//     variantAttributes Json @db.JsonB @map("variant_attributes")
+//     snapshotUnitPrice Decimal @map("snapshot_unit_price") @db.Decimal(15,2) // Giá lúc mua
+//     snapshotName String @map("snapshot_name") // Tên lúc mua
+//     snapshotSku String @map("snapshot_sku") // sku lúc mua
+
+//     quantity Int
+
+//     totalPrice Decimal @db.Decimal(15,2) @map("total_price")
+
+//     // Relation
+//     order Order @relation(fields: [orderId],references: [id])
+//     product Product @relation(fields: [productId],references: [id])
+//     productVariant ProductVariant @relation(fields: [productVariantId],references: [id])
+
+//     @@map("order_items")
+//     @@index([orderId])
+// }
+
+// // ------------------------------------------------------
+// model Review{
+//     id String @id @default(uuid())
+
+//     productId String @map("product_id")
+//     productVariantId String @map("product_variant_id")
+//     customerId String @map("customer_id")
+//     orderId String @map("order_id") // Để check nếu khách hàng có mua hàng thì review sẽ legit hơn
+//     rating Int
+//     title String 
+//     comment String 
+//     reviewStatus ReviewStatus
+//     isVerified Boolean @map("is_verified")
+//     adminResponse String @map("admin_response")
+//     respondedAt DateTime @map("responsed_at")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     // Relation 
+//     product Product @relation(fields: [productId],references: [id])
+//     productVariant ProductVariant @relation(fields: [productVariantId],references: [id])
+//     reviewImgs ReviewImage[]
+// }
+
+// model ReviewImage{
+//     id String @id @default(uuid())
+//     reviewId String @map("review_id")
+//     url String
+
+//     review Review @relation(fields: [reviewId],references: [id])
+
+//     @@map("review_imgs")
+// }
+
+// //------------------------------ Khuyến Mãi ----------------------
+// model Coupon{
+//     id String @id @default(uuid())
+//     couponCode String @unique @map("coupon_code")
+//     name String 
+//     description String
+//     couponType CouponType
+//     value Decimal @db.Decimal(15,2)
+//     minimumAmount Int @default(0) @map("minimum_amount")
+//     maximumDiscount Decimal @db.Decimal(15,2) @map("maximum_discount")
+//     usageLimit Int @default(0) @map("usage_limit")
+//     usageLimitPerCustomer Int @map("usage_limit_per_customer")
+//     usedCount Int @default(0) @map("used_count")
+//     validFrom DateTime @map("valid_from")
+//     validUntil DateTime @map("valid_until")
+//     isActive Boolean @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     orders Order[]
+// }
+// // model Promotion{
+// //     id String @id @default(uuid())
+// //     name String 
+// //     description String
+// //     discountType DiscountType // Loại giảm: percentage (%) hoặc fixed_amount (số tiền cố định)
+// //     discountValue Decimal @db.Decimal(15,2) @map("discount_value")
+// //     appliesTo AppliesTo // Phạm vi áp dụng: all / product / category / brand / series
+// //     applicableProducts Product[]
+// //     applicableCategories Category[]
+// //     applicableBrands Brand[]
+// //     applicableSeries BrandSeries[]
+// //     startsAt DateTime @map("starts_at")
+// //     endsAt DateTime @map("ends_at")
+// //     isActive Boolean @map("is_active")
+// //     priority Int // Độ ưu tiên khi có nhiều promotion chồng nhau. Số càng cao càng được ưu tiên áp dụng trước   
+// //     createdAt DateTime @default(now()) @map("created_at")
+// //     updatedAt DateTime @updatedAt @map("updated_at")
+// // }
+
+// // model Discount{
+// //     id String @id @default(uuid())
+// //     promotionId String @map("promotion_id")
+// //     productId String @map("product_id")
+// //     productVariantId String @map("product_variant_id")
+// //     originalPrice Decimal @db.Decimal(15,2) @map("original_price")
+// //     discountPrice Decimal @db.Decimal(15,2) @map("discount_price")
+// //     discountAmount Decimal @db.Decimal(15,2) @map("discount_amount")
+// //     appliedAt DateTime @map("applied_at")
+    
+// // }
+
+// model Promotion{
+//     id String @id @default(uuid())
+//     name String 
+//     description String
+//     bannerUrl String @map("banner_url")
+
+//     discountType DiscountType // Loại giảm: percentage (%) hoặc fixed_amount (số tiền cố định)
+//     // Giá trị mặc định nếu Discount con không ghi đè
+//     discountValue Decimal @db.Decimal(15,2) @map("discount_value")
+
+//     startsAt DateTime @map("starts_at")
+//     endsAt DateTime @map("ends_at")
+//     isActive Boolean @default(true) @map("is_active")
+//     priority Int @default(0) // Độ ưu tiên khi có nhiều promotion chồng nhau. Số càng cao càng được ưu tiên áp dụng trước 
+
+//     // Thêm các điều kiện bổ sung
+//     minOrderAmount Decimal?    @db.Decimal(15, 2) @map("min_order_amount")
+//     maxDiscount    Decimal?    @db.Decimal(15, 2) @map("max_discount") // Dành cho loại %
+//     usageLimit     Int?        @map("usage_limit") // Giới hạn số suất (VD: 100 máy)
+//     usedCount      Int         @default(0) @map("used_count")
+
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     // Liên kết tới danh sách các Variant cụ thể được áp dụng
+//     appliedVariants Discount[]
+//     scopes PromotionScope[]
+
+//     @@map("promotions")
+// }
+
+// model Discount{
+//     id String @id @default(uuid())
+//     promotionId String @map("promotion_id")
+
+//     // Linh hoạt: Giảm theo Product hoặc từng Variant cụ thể
+//     productId String? @map("product_id")                // Nếu set ở đây, áp dụng cho tất cả variant của product
+//     productVariantId String? @map("product_variant_id")  // Nếu set ở đây, chỉ áp dụng cho đúng variant này
+
+//     // Override: Nếu trường này có giá trị, nó sẽ ghi đè discountValue của Promotion
+//     overrideValue Decimal? @db.Decimal(15,2) @map("override_value")
+
+//     promotion Promotion @relation(fields: [promotionId],references: [id])
+//     product Product? @relation(fields: [productId],references: [id])
+//     productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+
+//     createdAt DateTime @default(now()) @map("created_at")
+
+//     // Đảm bảo tính duy nhất để tránh log sai dữ liệu    
+//     @@unique([promotionId, productVariantId]) // Một Variant không xuất hiện 2 lần trong 1 Promotion
+//     @@unique([promotionId,productId])
+//     @@map("discounts")
+// }
+
+// model PromotionScope{
+//     id String @id @default(uuid())
+//     promotionId String @map("promotion_id")
+
+//     scopeType ScopeType // BRAND, CATEGORY, SERIES, ALL
+//     scopeReferenceId String @map("scope_reference_id") // ID của Brand/Category tương đương
+
+//     promotion Promotion @relation(fields: [promotionId],references: [id])
+
+//     @@map("promotion_scopes")
+// }   
+
+// model CustomerRank{
+//     // Lưu thông tin về customer cụ thể đang có rank nào
+//     id String @id @default(uuid())
+//     customerId String @map("customer_id")
+//     tierId String @map("tier_id")
+//     status CustomerRankStatus // Đang giữ hạng / Chờ xuống hạng / Đã hết hạn
+//     priorityScore Int @map("priority_score")
+//     currentPoint Int @default(0) @map("current_point")
+//     totalSpending Decimal @db.Decimal(15,2) @map("total_spending")
+//     periodSpending Decimal @db.Decimal(15,2) @map("period_spending")
+//     evaluatedAt DateTime @map("evaluated_at")       // start date
+//     validUntil DateTime @map("valid_until")         // end date
+//     triggerOrderId String? @map("trigger_order_id") // order nào gây ra việc tính lại
+//     previousRankId String? @map("previous_rank_id")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     customer CustomerProfile @relation(fields: [customerId],references: [id])
+//     tier CustomerTier @relation(fields: [tierId],references: [id])
+
+//     @@map("customer_ranks")
+//     @@index([customerId,evaluatedAt(sort: Desc)]) // query rank mới nhất nhanh
+// }
+
+// model CustomerTier{
+//     // Danh sách các tier mà user có thể đạt được
+//     id String @id @default(uuid())
+//     name String @unique
+//     iconUrl String @map("icon_url")
+//     minSpending Decimal @db.Decimal(15,2) @map("min_spending")
+//     sortOrder Int @map("sort_order") // Để sắp xếp hiển thị
+
+//     benefits CustomerTierBenefit[]
+//     ranks CustomerRank[]
+//     orders Order[]
+
+//     isActive Boolean @map("is_active")
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     @@map("customer_tiers")
+//     @@index([minSpending])
+// }
+// model CustomerTierBenefit{
+//     // Các lợi ích mà tier có thể nhận được
+//     id String @id @default(uuid())
+//     tierId String @map("tier_id")
+//     type BenefitType
+//     value Json @db.JsonB       // JSON string - linh hoạt theo type
+//     label String        // Hiển thị cho user: "Giảm 10% tất cả đơn hàng"
+//     isActive Boolean @map("is_active")
+//     validFrom DateTime @map("valid_from")
+//     validTo DateTime @map("valid_to")
+
+//     tier CustomerTier @relation(fields: [tierId],references: [id])
+
+//     @@map("customer_tier_benefits")
+//     @@index([tierId,validFrom])
+// }
+
+// model CustomerPointHistory{
+//     id String @id @default(uuid())
+//     userId String @map("user_id")
+//     orderId String @map("order_id")
+//     pointEarned Int @default(0) @map("point_earned")
+//     pointSpent Int @default(0) @map("point_spent")
+//     pointBalance Int @default(0) @map("point_balance")
+//     transactionType PointTransactionType // ENUM
+//     createdAt DateTime @default(now()) @map("created_at")
+
+//     @@map("customer_point_histories")
+//     @@index([userId, createdAt])
+// }
+
+// model TierBenefitApplication{
+//     id String @id @default(uuid())
+//     orderId String @map("order_id")
+
+//     benefitAppliedSnapshot Json @db.JsonB @map("benefit_applied_snapshot") // Lưu: { "name": "VIP Gold", "detail": "Giảm 10% tối đa 50k", "code": "GOLD10" }
+//     discountAmount Decimal @db.Decimal(15,2) @map("discount_amount")
+//     benefitType String @map("benefit_type") // "DISCOUNT", "GIFT", "SHIPPING"
+//     appliedAt DateTime @default(now()) @map("applied_at")
+
+//     order Order @relation(fields: [orderId],references: [id])
+
+//     @@map("tier_benefit_applications")
+//     @@index([orderId])
+// }
+
+// model Payment{
+//     id String @id @default(uuid())
+//     orderId String @unique @map("order_id") // 1 đơn hàng thanh toán 1 lần
+    
+//     amount Decimal @db.Decimal(15,2) 
+//     currency String @default("VND")
+//     status  PaymentStatus @default(PENDING)
+//     method PaymentMethod 
+
+//     // Thông tin cổng thanh toán
+//     transactionId String? @unique @map("transaction_id") // ID giao dịch phía ngân hàng/ví
+//     gatewayResponse Json? @db.JsonB @map("gateway_response") // Lưu log phản hồi để đối soát
+
+//     createdAt DateTime @default(now()) @map("created_at")
+//     updatedAt DateTime @updatedAt @map("updated_at")
+
+//     order Order @relation(fields: [orderId],references: [id])
+// }
