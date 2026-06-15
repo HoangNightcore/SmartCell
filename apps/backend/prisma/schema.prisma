@@ -120,6 +120,7 @@ model User {
     email        String    @unique
     passwordHash String    @map("password_hash")
     fullName    String    @map("full_name")
+    phone       String    @unique
     avatarUrl   String?   @map("avatar_url")
     role         UserRole  @default(CUSTOMER)
     isActive     Boolean   @default(true) @map("is_active")
@@ -133,6 +134,7 @@ model User {
     @@map("users")
     @@index([email])
     @@index([role, isActive])
+    @@index([phone])
 }
 
 // CRM data của khách hàng — chỉ tạo khi User.role = CUSTOMER
@@ -140,7 +142,6 @@ model CustomerProfile {
     id     String @id @default(uuid())
     userId String @unique @map("user_id")
 
-    phone       String    @unique
     gender      String?
     dateOfBirth DateTime? @map("date_of_birth")
 
@@ -162,7 +163,6 @@ model CustomerProfile {
     rankHistories CustomerRankHistory[]
 
     @@map("customer_profiles")
-    @@index([phone])
 }
 
 model Address {
@@ -477,7 +477,7 @@ model Order {
     updatedAt   DateTime  @updatedAt @map("updated_at")
 
     customer                CustomerProfile          @relation(fields: [customerId], references: [id])
-    address                 Address?                 @relation(fields: [addressId], references: [id])
+    address                 Address?                 @relation(fields: [addressId], references: [id], onDelete: SetNull) // ← THÊM: khi address bị xóa, set addressId = null
     coupon                  Coupon?                  @relation(fields: [couponId], references: [id])
     appliedTier             CustomerTier?            @relation(fields: [appliedTierId], references: [id])
     items                   OrderItem[]

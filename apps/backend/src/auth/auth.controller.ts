@@ -15,7 +15,7 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
-import { UserResponseDto } from '../users/dto/user-response.dto';
+import { UserResponseDto } from '../users/dto/response/user-response.dto';
 
 /**
  * AUTH CONTROLLER - TỔNG ĐÀI ĐIỀU HƯỚNG XÁC THỰC & BẢO MẬT

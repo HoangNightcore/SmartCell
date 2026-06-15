@@ -1,15 +1,11 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from './../users/users.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { UserResponseDto } from './../users/dto/user-response.dto';
+import { UserResponseDto } from '../users/dto/response/user-response.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 import Redis from 'ioredis';
 /**

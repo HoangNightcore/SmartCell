@@ -43,6 +43,7 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "password_hash" TEXT NOT NULL,
     "full_name" TEXT NOT NULL,
+    "phone" TEXT NOT NULL,
     "avatar_url" TEXT,
     "role" "UserRole" NOT NULL DEFAULT 'CUSTOMER',
     "is_active" BOOLEAN NOT NULL DEFAULT true,
@@ -58,7 +59,6 @@ CREATE TABLE "users" (
 CREATE TABLE "customer_profiles" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
-    "phone" TEXT NOT NULL,
     "gender" TEXT,
     "date_of_birth" TIMESTAMP(3),
     "tier_point" INTEGER NOT NULL DEFAULT 0,
@@ -511,19 +511,19 @@ CREATE TABLE "payments" (
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
+
+-- CreateIndex
 CREATE INDEX "users_email_idx" ON "users"("email");
 
 -- CreateIndex
 CREATE INDEX "users_role_is_active_idx" ON "users"("role", "is_active");
 
 -- CreateIndex
+CREATE INDEX "users_phone_idx" ON "users"("phone");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "customer_profiles_user_id_key" ON "customer_profiles"("user_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "customer_profiles_phone_key" ON "customer_profiles"("phone");
-
--- CreateIndex
-CREATE INDEX "customer_profiles_phone_idx" ON "customer_profiles"("phone");
 
 -- CreateIndex
 CREATE INDEX "addresses_customer_id_idx" ON "addresses"("customer_id");

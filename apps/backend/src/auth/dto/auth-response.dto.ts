@@ -1,4 +1,4 @@
-import { UserResponseDto } from './../../users/dto/user-response.dto';
+import { UserResponseDto } from '../../users/dto/response/user-response.dto';
 
 /**
  * AUTH RESPONSE DTO: Cấu trúc dữ liệu trả về khi Đăng nhập / Đăng ký thành công.
